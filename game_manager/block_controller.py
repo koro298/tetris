@@ -7,6 +7,8 @@ import copy
 import numpy
 from board_manager import BOARD_DATA
 
+
+
 class Block_Controller(object):
 
     # init parameter
@@ -17,10 +19,10 @@ class Block_Controller(object):
     CurrentShape_class = 0
     NextShape_class = 0
 
-    index_tetris_raw = 10
-    flg_hidden_tetris = 0
-    flg_hole = 0
-    counter = 0
+    # 追加パラメータ    
+    # index_tetris_raw = 10   # テトリス穴インデックス
+    flg_hidden_tetris = 0   # テトリス穴が隠れているか
+    flg_hole = 0            # 穴が存在するか
     
 
     # GetNextMove is main function.
@@ -31,8 +33,6 @@ class Block_Controller(object):
     # output
     #    nextMove : nextMove structure which includes next shape position and the other.
     def GetNextMove(self, nextMove, GameStatus):
-        print(self.counter)
-        self.counter = self.counter+1
         t1 = datetime.now()
 
         # print GameStatus
@@ -45,11 +45,9 @@ class Block_Controller(object):
         # next shape info
         NextShapeDirectionRange = GameStatus["block_info"]["nextShape"]["direction_range"]
         self.NextShape_class = GameStatus["block_info"]["nextShape"]["class"]
-        self.NextShape_class = GameStatus["block_info"]["nextShape"]["class"]
 
         # 次のミノの種類を知りたいけど...　
         NextShapeClass, NextShapeIdx, NextShapeRange = BOARD_DATA.getShapeData(1) # nextShape
-        print(NextShapeIdx)
 
         # current board info
         self.board_backboard = GameStatus["field_info"]["backboard"]
@@ -59,21 +57,25 @@ class Block_Controller(object):
         self.ShapeNone_index = GameStatus["debug_info"]["shape_info"]["shapeNone"]["index"]
 
         # 現在の盤面を調査
-        board = copy.deepcopy(self.board_backboard)
+        # board = copy.deepcopy(self.board_backboard)
 
         # search best nextMove -->
         strategy = None
         LatestEvalValue = -100000
+
+        # テトリス穴作りに励むか掘るかの判定
+        br = self.flg_hidden_tetris or self.flg_hole
+
         # search with current block Shape
         for direction0 in CurrentShapeDirectionRange:
             # search with x range
             x0Min, x0Max = self.getSearchXRange(self.CurrentShape_class, direction0)
-            for x0 in range(x0Min, x0Max):
+            for x0 in range(x0Min, (x0Max-1) if br else (x0Max)):
                 # get board data, as if dropdown block
                 board = self.getBoard(self.board_backboard, self.CurrentShape_class, direction0, x0)
 
                 # evaluate board
-                EvalValue = self.calcEvaluationValueSample(board,self.NextShape_class)
+                EvalValue = self.calcEvaluationValueSample(board, NextShapeIdx)
                 # update best move
                 if EvalValue > LatestEvalValue:
                     strategy = (direction0, x0, 1, 1)
@@ -154,6 +156,9 @@ class Block_Controller(object):
         #
         width = self.board_data_width
         height = self.board_data_height
+        self.flg_hole = 0
+        self.flg_hidden_tetris = 0
+
 
         # evaluation paramters
         ## lines to be removed
@@ -186,12 +191,10 @@ class Block_Controller(object):
                     if holeCandidates[x] > 0:
                         holeConfirm[x] += holeCandidates[x]  # update number of holes in target column..
                         holeCandidates[x] = 0                # reset
+                        flg_hole = 1
                     if holeConfirm[x] > 0:
                         nIsolatedBlocks += 1                 # update number of isolated blocks
-                        # print('x(-1):'+str(board[y * self.board_data_width + x-1])+'\n'+'x(+1):'+str(board[y * self.board_data_width + x+1])+'\n'+'y(-1):'+str(board[(y-1) * self.board_data_width + x])+'\n'+'y(+1):'+str(board[(y+1) * self.board_data_width + x])+'\n')
-                        # print(' '+str(board[(y-1) * self.board_data_width + x])+' '+'\n'+str(board[y * self.board_data_width + x-1])+str(board[y * self.board_data_width + x])+str(board[y * self.board_data_width + x+1])+'\n'+' ' +str(board[(y+1) * self.board_data_width + x]) +'\n')
-
-
+    
             if hasBlock == True and hasHole == False:
                 # filled with block
                 fullLines += 1
@@ -202,7 +205,10 @@ class Block_Controller(object):
                 # no block line (and ofcourse no hole)
                 pass
 
-        
+        # tetris穴がふさがれているか
+        if holeConfirm[9] > 0:
+            self.flg_hidden_tetris = 1  
+
         # nHoles
         for x in holeConfirm:
             nHoles += abs(x)
