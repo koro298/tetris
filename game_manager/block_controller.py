@@ -57,22 +57,21 @@ class Block_Controller(object):
                 # get board data, as if dropdown block
                 board = self.getBoard(self.board_backboard, self.CurrentShape_class, direction0, x0)
 
-                # evaluate board
-                EvalValue = self.calcEvaluationValueSample(board)
-                # update best move
-                if EvalValue > LatestEvalValue:
-                    strategy = (direction0, x0, 1, 1)
-                    LatestEvalValue = EvalValue
+                # # evaluate board
+                # EvalValue = self.calcEvaluationValueSample(board)
+                # # update best move
+                # if EvalValue > LatestEvalValue:
+                #     strategy = (direction0, x0, 1, 1)
+                #     LatestEvalValue = EvalValue
 
-                # test
-                # for direction1 in NextShapeDirectionRange:
-                #  x1Min, x1Max = self.getSearchXRange(self.NextShape_class, direction1)
-                #  for x1 in range(x1Min, x1Max):
-                #        board2 = self.getBoard(board, self.NextShape_class, direction1, x1)
-                #        EvalValue = self.calcEvaluationValueSample(board2)
-                #        if EvalValue > LatestEvalValue:
-                #            strategy = (direction0, x0, 1, 1)
-                #            LatestEvalValue = EvalValue
+                for direction1 in NextShapeDirectionRange:
+                    x1Min, x1Max = self.getSearchXRange(self.NextShape_class, direction1)
+                    for x1 in range(x1Min, x1Max):
+                        board2 = self.getBoard(board, self.NextShape_class, direction1, x1)
+                        EvalValue = self.calcEvaluationValueSample(board2)
+                        if EvalValue > LatestEvalValue:
+                            strategy = (direction0, x0, 1, 1)
+                            LatestEvalValue = EvalValue
         # search best nextMove <--
 
         print("===", datetime.now() - t1)
@@ -179,9 +178,7 @@ class Block_Controller(object):
                         holeCandidates[x] = 0                # reset
                     if holeConfirm[x] > 0:
                         nIsolatedBlocks += 1                 # update number of isolated blocks
-                        # print('x(-1):'+str(board[y * self.board_data_width + x-1])+'\n'+'x(+1):'+str(board[y * self.board_data_width + x+1])+'\n'+'y(-1):'+str(board[(y-1) * self.board_data_width + x])+'\n'+'y(+1):'+str(board[(y+1) * self.board_data_width + x])+'\n')
-                        # print(' '+str(board[(y-1) * self.board_data_width + x])+' '+'\n'+str(board[y * self.board_data_width + x-1])+str(board[y * self.board_data_width + x])+str(board[y * self.board_data_width + x+1])+'\n'+' ' +str(board[(y+1) * self.board_data_width + x]) +'\n')
-
+                        
 
             if hasBlock == True and hasHole == False:
                 # filled with block
@@ -198,38 +195,149 @@ class Block_Controller(object):
         for x in holeConfirm:
             nHoles += abs(x)
 
+        absDyHashiake = 0
+        aveDyHashiake = 0
+        aveDy = 0
         # absolute differencial value of MaxY
         BlockMaxDy = []
+        absBlockMaxDy = []
         for i in range(len(BlockMaxY) - 1):
             val = BlockMaxY[i] - BlockMaxY[i+1]
             BlockMaxDy += [val]
+            absBlockMaxDy += [abs(val)]
         for x in BlockMaxDy:
             absDy += abs(x)
+        aveDy = absDy/9
+        for i in range(len(BlockMaxDy)-1):
+            absDyHashiake += abs(BlockMaxDy[i])
+        aveDyHashiake = absDyHashiake/len(BlockMaxDy)
 
-        # 最大連続穴（上空き）
-        # i_max = numpy.argmax(BlockMaxY)
-        # for i in range(len(BlockMaxDy) - 1):
+        # diffFromLeft
+        diffFromLeft = 0
+        height9ColHole = 0
+        BlockMaxDyHashiake = []
+        absBlockMaxDyHashiake = []
+        for i in range(len(BlockMaxY) - 2):
+            val = BlockMaxY[i] - BlockMaxY[i+1]
+            BlockMaxDyHashiake += [val]
+            absBlockMaxDyHashiake += [abs(val)]
+            diffFromLeft += val
 
-        # U字型
-
+        val = BlockMaxY[8] - BlockMaxY[9]
+        if BlockMaxY[9] == 0:
+            height9ColHole = 10
 
         # maxDy
         #maxDy = max(BlockMaxY) - min(BlockMaxY)
         # maxHeight
         maxHeight = max(BlockMaxY) - fullLines
 
-     
-        # 連続穴
-
-
         # calc Evaluation Value
         score = 0
-        score = score + numpy.exp(fullLines)        # try to delete line 
-        score = score - nHoles * 5.0                # try not to make hole
-        score = score - nIsolatedBlocks * 15.0      # try not to make isolated block
-        score = score - maxHeight**3/125            # maxHeight
-        score = score - 5*absDy                     # 
+        # 加点
+        if fullLines == 3:
+            score = score + 10        # try to delete line 
+        elif fullLines == 4:
+            score = score + 9999        # try to delete line 
+        
+        
 
+        # if ((nHoles+nIsolatedBlocks)<3)&(BlockMaxY[9] <= 2):
+        #     # diffFromLeft
+        #     if diffFromLeft < 6:
+        #         score = score + diffFromLeft
+        #     else:
+        #         score = score + 6
+
+        #     # hole for tetris
+        #     if diffFromLeft > 0:
+        #             score = score + height9ColHole
+
+        #     if max(BlockMaxDyHashiake) >= 4:
+        #         score = score - 7
+        #     score = score - nHoles * 5.0                # try not to make hole
+        #     score = score - nIsolatedBlocks * 10.0      # try not to make isolated block
+        #     if maxHeight >= 16:
+        #         score = score - 20                      # maxHeight
+
+        #     if aveDyHashiake>=1.5:
+        #         score = score - aveDyHashiake*10                    
+        # else:
+        # if diffFromLeft < 6:
+        #     score = score + diffFromLeft
+        # else:
+        #     score = score + 6
+        
+        # score = score + diffFromLeft
+        if (((nHoles+nIsolatedBlocks)<1)&(BlockMaxY[9] == 0)):
+            score = score + 555
+            if fullLines == 1:
+                score = score -2      # try to delete line
+            elif fullLines == 2:
+                score = score -1      # try to delete line 
+            
+
+            if max(absBlockMaxDyHashiake) <= 4:
+                if diffFromLeft < 7:
+                        score = score + diffFromLeft
+                else:
+                        score = score + 7
+            else:
+                score = score + diffFromLeft
+                score = score - max(absBlockMaxDyHashiake)*1.5
+
+            score = score - nHoles * 10.0                # try not to make hole
+            score = score - nIsolatedBlocks * 15.0      # try not to make isolated block
+            if maxHeight >= 16:
+                score = score - (maxHeight-15)*15           # maxHeight
+            score = score - 3*absDyHashiake
+        elif (((nHoles+nIsolatedBlocks)>3)):
+            if fullLines == 1:
+                score = score +6      # try to delete line
+            elif fullLines == 2:
+                score = score +8      # try to delete line 
+
+            if max(absBlockMaxDyHashiake) <= 4:
+                if diffFromLeft < 7:
+                        score = score + diffFromLeft
+                else:
+                        score = score + 7
+            else:
+                score = score + diffFromLeft
+                score = score - max(absBlockMaxDyHashiake)*1.5
+
+            score = score - nHoles * 10.0                # try not to make hole
+            score = score - nIsolatedBlocks * 15.0      # try not to make isolated block
+            score = score - 3*absDy
+            if maxHeight >= 16:
+                score = score - (maxHeight-15)*15           # maxHeight
+        else:
+            if fullLines == 1:
+                score = score -2      # try to delete line
+            elif fullLines == 2:
+                score = score -1      # try to delete line 
+            if max(absBlockMaxDyHashiake) <= 4:
+                if diffFromLeft < 7:
+                        score = score + diffFromLeft
+                else:
+                        score = score + 7
+            else:
+                score = score + diffFromLeft
+                score = score - max(absBlockMaxDy)*1.5
+
+            score = score - nHoles * 10.0                # try not to make hole
+            score = score - nIsolatedBlocks * 15.0      # try not to make isolated block
+            if maxHeight >= 16:
+                score = score - (maxHeight-15)*15           # maxHeight
+            score = score - 3*absDy
+    
+
+        # score = score + diffFromLeft
+        # score = score - nHoles * 10.0                # try not to make hole
+        # score = score - nIsolatedBlocks * 15.0      # try not to make isolated block
+        # if maxHeight >= 16:
+        #     score = score - 20           # maxHeight
+        # score = score - 3*absDy   
 
 
         return score
