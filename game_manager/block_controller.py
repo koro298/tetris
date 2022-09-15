@@ -289,13 +289,15 @@ class Block_Controller(object):
             score = score - nHoles * 10.0                # try not to make hole
             score = score - nIsolatedBlocks * 15.0      # try not to make isolated block
             if maxHeight >= 16:
-                score = score - (maxHeight-15)*15           # maxHeight
+                score = score - 10**(maxHeight-15)           # maxHeight
             score = score - 3*absDyHashiake
         elif (((nHoles+nIsolatedBlocks)>3)):
             if fullLines == 1:
                 score = score +6      # try to delete line
             elif fullLines == 2:
                 score = score +8      # try to delete line 
+            elif fullLines == 3:
+                score = score + 10        # try to delete line 
 
             if max(absBlockMaxDyHashiake) <= 4:
                 if diffFromLeft < 7:
@@ -310,7 +312,7 @@ class Block_Controller(object):
             score = score - nIsolatedBlocks * 15.0      # try not to make isolated block
             score = score - 3*absDy
             if maxHeight >= 16:
-                score = score - (maxHeight-15)*15           # maxHeight
+                score = score - 10**(maxHeight-15)           # maxHeight
         else:
             if fullLines == 1:
                 score = score -2      # try to delete line
@@ -327,8 +329,8 @@ class Block_Controller(object):
 
             score = score - nHoles * 10.0                # try not to make hole
             score = score - nIsolatedBlocks * 15.0      # try not to make isolated block
-            if maxHeight >= 16:
-                score = score - (maxHeight-15)*15           # maxHeight
+            if maxHeight >= 15:
+                score = score - 10**(maxHeight-14)           # maxHeight
             score = score - 3*absDy   
     
 
