@@ -329,7 +329,7 @@ class Block_Controller(object):
             score = score - nIsolatedBlocks * 15.0      # try not to make isolated block
             if maxHeight >= 16:
                 score = score - (maxHeight-15)*15           # maxHeight
-            score = score - 3*absDy
+            score = score - 3*absDy　
     
 
         # score = score + diffFromLeft
