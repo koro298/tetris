@@ -64,7 +64,8 @@ class Block_Controller(object):
         LatestEvalValue = -100000
 
         # テトリス穴作りに励むか掘るかの判定
-        br = self.flg_hidden_tetris or self.flg_hole
+        br = (self.flg_hidden_tetris==0) and (self.flg_hole==0)
+        # br = 0
 
         # search with current block Shape
         for direction0 in CurrentShapeDirectionRange:
@@ -191,7 +192,7 @@ class Block_Controller(object):
                     if holeCandidates[x] > 0:
                         holeConfirm[x] += holeCandidates[x]  # update number of holes in target column..
                         holeCandidates[x] = 0                # reset
-                        flg_hole = 1
+                        self.flg_hole = 1
                     if holeConfirm[x] > 0:
                         nIsolatedBlocks += 1                 # update number of isolated blocks
     
@@ -334,7 +335,7 @@ class Block_Controller(object):
         # calc Evaluation Value
         score = 0
         score = score + numpy.exp(fullLines)        # try to delete line 
-        score = score - nHoles * 5.0                # try not to make hole
+        score = score - nHoles * 30              # try not to make hole
         score = score - nIsolatedBlocks * 15.0      # try not to make isolated block
         score = score - maxHeight**3/125            # maxHeight
         score = score - 5*absDy                     # 
